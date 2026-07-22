@@ -4,6 +4,7 @@ from fastapi import HTTPException
 from sqlalchemy.orm import Session
 
 from app.attendance.models import Attendance
+from app.student_profile.models import StudentProfile
 
 
 def check_in(student_id, db: Session):
@@ -34,6 +35,17 @@ def check_in(student_id, db: Session):
     db.add(attendance)
     db.commit()
     db.refresh(attendance)
+
+    # Update Student Profile
+    profile = (
+        db.query(StudentProfile)
+        .filter(StudentProfile.student_id == student_id)
+        .first()
+    )
+
+    if profile:
+        profile.total_visits += 1
+        db.commit()
 
     return attendance
 

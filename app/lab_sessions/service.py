@@ -4,18 +4,15 @@ from fastapi import HTTPException
 from sqlalchemy.orm import Session
 
 from app.lab_sessions.models import LabSession
+from app.student_profile.models import StudentProfile
 
 
 def start_session(student_id, attendance_id, db: Session):
 
-    existing = (
-        db.query(LabSession)
-        .filter(
-            LabSession.student_id == student_id,
-            LabSession.status == "ACTIVE"
-        )
-        .first()
-    )
+    existing = db.query(LabSession).filter(
+        LabSession.student_id == student_id,
+        LabSession.status == "ACTIVE"
+    ).first()
 
     if existing:
         raise HTTPException(
@@ -39,14 +36,10 @@ def start_session(student_id, attendance_id, db: Session):
 
 def end_session(student_id, db: Session):
 
-    session = (
-        db.query(LabSession)
-        .filter(
-            LabSession.student_id == student_id,
-            LabSession.status == "ACTIVE"
-        )
-        .first()
-    )
+    session = db.query(LabSession).filter(
+        LabSession.student_id == student_id,
+        LabSession.status == "ACTIVE"
+    ).first()
 
     if session is None:
         raise HTTPException(
@@ -56,13 +49,19 @@ def end_session(student_id, db: Session):
 
     session.end_time = datetime.now()
 
-    minutes = int(
-        (session.end_time - session.start_time).total_seconds() / 60
-    )
+    hours = (
+        session.end_time - session.start_time
+    ).total_seconds() / 3600
 
-    session.duration = f"{minutes} Minutes"
-
+    session.duration = f"{round(hours,2)} Hours"
     session.status = "COMPLETED"
+
+    profile = db.query(StudentProfile).filter(
+        StudentProfile.student_id == student_id
+    ).first()
+
+    if profile:
+        profile.total_lab_hours += hours
 
     db.commit()
     db.refresh(session)
@@ -72,10 +71,6 @@ def end_session(student_id, db: Session):
 
 def active_sessions(db: Session):
 
-    return (
-        db.query(LabSession)
-        .filter(
-            LabSession.status == "ACTIVE"
-        )
-        .all()
-    )
+    return db.query(LabSession).filter(
+        LabSession.status == "ACTIVE"
+    ).all()

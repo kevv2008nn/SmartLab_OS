@@ -5,6 +5,7 @@ from sqlalchemy.orm import Session
 
 from app.borrow_return.models import BorrowTransaction
 from app.models.inventory import Inventory
+from app.student_profile.models import StudentProfile
 
 
 def borrow_component(data, db: Session):
@@ -31,14 +32,21 @@ def borrow_component(data, db: Session):
         student_id=data.student_id,
         component_id=data.component_id,
         quantity=data.quantity,
-        borrow_time=datetime.now()
+        borrow_time=datetime.now(),
+        status="BORROWED"
     )
 
     db.add(transaction)
-
     db.commit()
-
     db.refresh(transaction)
+
+    profile = db.query(StudentProfile).filter(
+        StudentProfile.student_id == data.student_id
+    ).first()
+
+    if profile:
+        profile.total_components_borrowed += data.quantity
+        db.commit()
 
     return transaction
 
@@ -62,11 +70,9 @@ def return_component(data, db: Session):
     component.quantity += transaction.quantity
 
     transaction.return_time = datetime.now()
-
     transaction.status = "RETURNED"
 
     db.commit()
-
     db.refresh(transaction)
 
     return transaction

@@ -10,6 +10,7 @@ import app.dashboard.dashboard_router as dashboard
 import app.attendance.router as attendance
 import app.lab_sessions.router as lab_session
 import app.borrow_return.router as borrow
+import app.student_profile.router as profile
 
 
 @asynccontextmanager
@@ -31,6 +32,7 @@ app.include_router(dashboard.router)
 app.include_router(attendance.router)
 app.include_router(lab_session.router)
 app.include_router(borrow.router)
+app.include_router(profile.router)
 
 
 @app.get("/")
